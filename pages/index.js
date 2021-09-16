@@ -1,33 +1,58 @@
+import Head from 'next/head'
+import { MongoClient } from "mongodb";
 import MeetupList from "../components/meetups/MeetupList";
 
-const DUMMY_MEETUPS = [
-  {
-    id: 'm1',
-    title: 'one',
-    image: 'https://images.unsplash.com/photo-1457305237443-44c3d5a30b89?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=1953&q=80',
-    title: 'uno',
-    address: 'front is rly hard',
-  },
-  {
-    id: 'm2',
-    title: 'two',
-    image: 'https://images.unsplash.com/photo-1457305237443-44c3d5a30b89?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=1953&q=80',
-    title: 'dos',
-    address: 'help',
-  }
-]
-
 function HomePage (props) {
-  return <MeetupList meetups={props.meetups} />
+  return (
+  <>
+  <Head>
+    <title>Nobare Learning NextJS</title>
+    <meta neme="description" content="Just learning some stuff" />
+  </Head>
+  <MeetupList meetups={props.meetups} />
+  </>
+  )
 }
 
-export async function getStaticProps() {
-  //fetch data (useEffct() normally)
+/* export async function getServerSideProps(context) {
+  // Used when you need access to the complete request
+  // Or when data is changed multiple times every second
+  const req = context.req;
+  const res = context.res;
+
+  // Fetch data from API
   return {
     props: {
       meetups: DUMMY_MEETUPS,
+    }
+  };
+} */
+
+export async function getStaticProps() {
+
+  const client = await MongoClient.connect(
+    'mongodb+srv://nobareadm:tdb3bzmJs4SezuA6@nobaredb.fb61i.gcp.mongodb.net/batadase?retryWrites=true&w=majority'
+  );
+
+  const db = client.db();
+  const meetupsCollection = db.collection('meetups');
+
+  const meetups = await meetupsCollection.find().toArray();
+
+  client.close();
+
+  return {
+    props: {
+      meetups: meetups.map(meetup => ({
+        title: meetup.title,
+        address: meetup.address,
+        image: meetup.image,
+        id: meetup._id.toString(),
+      })), 
     },
-  }
+
+    revalidate: 10
+  };
 }
 
 export default HomePage;
